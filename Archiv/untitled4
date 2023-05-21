@@ -1,0 +1,93 @@
+import gurobipy as gp
+
+# Create a Gurobi model
+model = gp.Model()
+
+# Define projects
+customers = ['Customer_1_Steel_Plant', 'Customer_2_Chemical_Plant']
+
+# Define time horizon
+time_horizon = range(1, 11)  # Time periods from 1 to 10
+
+# Define maximum demand and selling price for customer 1
+max_demand_customers = dict({
+    'Customer_2_Chemical_Plant': 2000,
+    'Customer_1_Steel_Plant': 100,
+    
+})
+
+# Maximum yearly demand in GWh
+price_per_unit_hydrogen = 210000  # Selling price in €/GWh
+price_per_unit_ammonia = 100000  # Selling price in €/GWh !! need to update value
+
+# Define cash outflow per period
+cash_outflow = [80, 16, 24, 32, 40, 48, 56, 64, 72, 80]
+
+# Initial investment
+initial_investment = 1000
+
+# Discount rate
+i = 0.1
+
+# Define decision variables
+x = {}
+y = {}
+for c in customers:
+    x[c] = model.addVar(name="x_" + c, vtype=gp.GRB.BINARY)
+    for t in time_horizon:
+        y[c, t] = model.addVar(name="y_" + c + "_" + str(t), lb=0, vtype=gp.GRB.CONTINUOUS)
+
+# Update Model
+model.update()
+
+# Define cash inflow per period for each customer
+cash_inflow_customer_1 = [price_per_unit_hydrogen * y['Customer_1_Steel_Plant', t] for t in time_horizon]
+cash_inflow_customer_2 = [price_per_unit_ammonia * y['Customer_2_Chemical_Plant', t] for t in time_horizon]
+
+
+model.addConstr(cash_inflow = cash_inflow_customer_1 * x[c] + cash_inflow_customer_2 * x[c])
+
+# Set the objective function to maximize dynamically calculated NPV
+objective = gp.quicksum((cash_inflow[t - 1] - cash_outflow[t - 1]) / ((1 + i) ** t )
+                for t in time_horizon)
+
+model.setObjective(objective, sense=gp.GRB.MAXIMIZE)
+
+# Add constraints for customer 1's supply
+# Print the values of y
+print("Values of y:")
+for c in customers:
+    for t in time_horizon:
+        print(f"y[{c}, {t}] = {y[c, t]}")
+
+# Print the values of x
+print("\nValues of x:")
+for c in customers:
+    print(f"x[{c}] = {x[c]}")
+
+# Print the values of max_demand_customers
+print("\nValues of max_demand_customers:")
+for c in customers:
+    print(f"max_demand_customers[{c}] = {max_demand_customers[c]}")
+
+model.addConstrs((y[c, t] <= x[c] * max_demand_customers[c] for c in customers for t in time_horizon),
+                 name="max_supply_constr")
+
+# Solve the model
+model.optimize()
+
+# Print the results
+print(f"The maximised NPV is {model.ObjVal}")
+print("Selected Projects:")
+for c in customers:
+    if x[c].x == 1:  # Checking if the project is selected
+        print(f"{c} is selected")
+    else:
+        print(f"{c} is not selected {x[c].x}")
+
+# Print the supply for each customer
+for c in customers:
+    supply_values = [y[c, t].x for t in time_horizon]
+    print(f"Supply to {c}: {supply_values} GWh")
+
+

@@ -13,7 +13,7 @@ model = gp.Model()
 customers = ['Customer_1_Steel_Plant', 'Customer_2_Chemical_Plant', 'Customer_3_Airport']
 
 # Define time horizon
-time_horizon = range(1, 11)  # Time periods from 1 to 10
+time_horizon = range(1, 31)  # Time periods from 1 to 10
 
 # Define maximum demand per customer in GWh
 max_demand_customers = {
@@ -25,12 +25,12 @@ max_demand_customers = {
 # Define selling price in €/GWh
 price_per_unit_hydrogen = 210000
 price_per_unit_ammonia = 287004
-price_per_unit_jetfuel = 31500000
+price_per_unit_jetfuel = 315000
 
 price_per_unit = {
     'hydrogen': 210000,
     'ammonia': 287004,
-    'jetfuel': 315#000,
+    'jetfuel': 315000,
 }
 
 # Define typical capacity per unit area in GW/km^2
@@ -101,7 +101,7 @@ efficiency_alkaline_electrolyzer = 0.65
 transport_costs = {
     'hydrogen': 20 * 10**3, 
     'ammonia': 10 * 10**3,
-    'jetfuel': 5 #* 10**3,
+    'jetfuel': 5 * 10**3,
 }
 # Discount rate
 i = 0.1
@@ -149,7 +149,7 @@ capacity_ammonia_synthesis = model.addVar(name="capacity_ammonia_synthesis", vty
 # Update Model
 model.update()
 
-# Define transportedd amounts in GWh
+# Define transported amounts in GWh
 transported_ammonia = [y['Customer_2_Chemical_Plant', t] * x_transport['ammonia'] for t in time_horizon]
 #transported_jetfuel = [y['Customer_3_Airport', t] * x_transport['jetfuel'] for t in time_horizon]
 transported_jetfuel = [y['Customer_3_Airport', t] for t in time_horizon]
@@ -230,7 +230,7 @@ for t in time_horizon:
     model.addConstr(y['Customer_3_Airport', t] >= 0.5 * max_demand_customers['Customer_3_Airport'] * x2)
     model.addConstr(x1 + x2 >= 1)
 
-# The capacity of the electrolyzers must meet demands 
+# The capacity of the electrolyzers must meet demands in GWh
 for t in time_horizon:
     model.addConstr(capacity_PEM_electrolyzer * operating_hours_PEM_electrolyzer * efficiency_PEM_electrolyzer 
                     + capacity_alkaline_electrolyzer * operating_hours_alkaline_electrolyzer * efficiency_alkaline_electrolyzer 
@@ -250,10 +250,10 @@ for t in time_horizon:
 for t in time_horizon:
     model.addConstr(point_source_amount[t] * x_point_source + dac_amount[t] * x_dac == transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel)
 
-# When dac_amount = [0, 0, 0, ..] x_dac should be zero, too
-for t in time_horizon:
-    model.addConstr(x_dac <= dac_amount[t])
-    model.addConstr(x_point_source <= point_source_amount[t])
+# # When dac_amount = [0, 0, 0, ..] x_dac should be zero, too
+# for t in time_horizon:
+#     model.addConstr(x_dac <= dac_amount[t])
+#     model.addConstr(x_point_source <= point_source_amount[t])
 
 # The capacity of the ammonia synthesis must meet demand of airport
 for t in time_horizon:

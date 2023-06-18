@@ -13,7 +13,7 @@ model = gp.Model()
 customers = ['Customer_1_Steel_Plant', 'Customer_2_Chemical_Plant', 'Customer_3_Airport']
 
 # Define time horizon
-time_horizon = range(1, 11)  # Time periods from 1 to 10
+time_horizon = range(1, 31)  # Time periods from 1 to 30
 
 # Define maximum demand per customer in GWh
 max_demand_customers = {
@@ -26,14 +26,11 @@ max_demand_customers = {
 price_per_unit = {
     'hydrogen': 210000,
     'ammonia': 287004,
-    'jetfuel': 315000,
+    'jetfuel': 315000, 
 }
 
 # Define typical capacity per unit area in GW/km^2
-capacity_per_unit_area_photovoltaic = 20 # = 2 MW/ha
-capacity_per_unit_area_wind = 30 # = 3 MW/ha
-
-capacity_per_unit = {
+capacity_per_unit_area = {
     'photovoltaic': 20,
     'wind': 30,
 }
@@ -49,23 +46,9 @@ for t in time_horizon:
         point_source_availability[t-1] = 0
 
 # CO2 demand for 1GWh of jetfuel in tons/GWh ! Check again !
-CO2_demand_per_unit_jetfuel = 230 
+CO2_demand_per_unit_jetfuel = 260 
 
 # Define CAPEX & OPEX in €/GW
-capex_photovoltaic = 650 * 10 **6 # = 650 €/kW
-capex_wind = 1500 * 10 **6 # = 1500 €/kW
-capex_PEM_electrolyzer = 700 * 10 **6 # = 700 €/kW
-capex_alkaline_electrolyzer = 650 * 10 **6 # = 700 €/kW
-capex_FT_synthesis = 1200 * 10 **6 # = 1200 €/kW
-capex_ammonia_synthesis = 1400 * 10 **6 # = 1400 €/kW
-
-opex_photovoltaic = 0.03 * capex_photovoltaic 
-opex_wind = 0.04 * capex_wind 
-opex_PEM_electrolyzer = 0.04 * capex_PEM_electrolyzer
-opex_alkaline_electrolyzer = 0.04 * capex_alkaline_electrolyzer
-opex_FT_synthesis = 0.05 * capex_FT_synthesis
-opex_ammonia_synthesis = 0.05 * capex_ammonia_synthesis
-
 capex = {
     'photovoltaic': 650 * 10 **6,
     'wind': 1500 * 10 ** 6,
@@ -91,7 +74,7 @@ deprecation_time = {
     'wind': 30,
     'PEM_electrolyzer': 10,
     'alkaline_electrolyzer': 10,
-    'FT_synthesis': 20,
+    'FT_synthesis': 10,
     'ammonia_synthesis': 20,
     'ammonia_splitting': 20,
 }
@@ -173,19 +156,19 @@ transported_hydrogen = [y['Customer_1_Steel_Plant', t] * x_transport['hydrogen']
 # Define cash inflow per period for each customer
 cash_inflow_customer_1 = [price_per_unit['hydrogen'] * y['Customer_1_Steel_Plant', t] for t in time_horizon]
 cash_inflow_customer_2 = [price_per_unit['ammonia'] * y['Customer_2_Chemical_Plant', t] for t in time_horizon]
-cash_inflow_customer_3 = [price_per_unit['jetfuel'] * y['Customer_3_Airport', t] / 0.71 * 0.29 for t in time_horizon] # in the task it says, that only 71% of the product is jet fuel, but the other 29% can be sold for the same price
+cash_inflow_customer_3 = [price_per_unit['jetfuel'] * y['Customer_3_Airport', t] / 0.71 for t in time_horizon] # in the task it says, that only 71% of the product is jet fuel, but the other 29% can be sold for the same price
 
 # Define costs for CO2 supply in € ( €/tons * tons * decision variable)
 point_source_costs = [70 * point_source_amount[t] * x_point_source for t in time_horizon]
 dac_costs = [300 * dac_amount[t] * x_dac for t in time_horizon]
 
 # Define cash outflow per period
-cash_outflow_photovoltaic = opex_photovoltaic * capacity_photovoltaic
-cash_outflow_wind = opex_wind * capacity_wind
-cash_outflow_PEM_electrolyzer = opex_PEM_electrolyzer * capacity_PEM_electrolyzer
-cash_outflow_alkaline_electrolyzer = opex_alkaline_electrolyzer * capacity_alkaline_electrolyzer
-cash_outflow_FT_synthesis = [opex_FT_synthesis * capacity_FT_synthesis + point_source_costs[t-1] + dac_costs[t-1] for t in time_horizon]
-cash_outflow_ammonia_synthesis = opex_ammonia_synthesis * capacity_ammonia_synthesis
+cash_outflow_photovoltaic = opex['photovoltaic'] * capacity_photovoltaic
+cash_outflow_wind = opex['wind'] * capacity_wind
+cash_outflow_PEM_electrolyzer = opex['PEM_electrolyzer'] * capacity_PEM_electrolyzer
+cash_outflow_alkaline_electrolyzer = opex['alkaline_electrolyzer'] * capacity_alkaline_electrolyzer
+cash_outflow_FT_synthesis = [opex['FT_synthesis'] * capacity_FT_synthesis + point_source_costs[t-1] + dac_costs[t-1] for t in time_horizon]
+cash_outflow_ammonia_synthesis = opex['ammonia_synthesis'] * capacity_ammonia_synthesis
 cash_outflow_ammonia_splitting = opex['ammonia_splitting'] * capacity_ammonia_splitting
 cash_outflow_transport = [transported_hydrogen[t-1] * transport_costs["hydrogen"] + transported_ammonia[t-1] * transport_costs["ammonia"] + transported_jetfuel[t-1] * transport_costs["jetfuel"] for t in time_horizon]
 cash_outflow_deprecation = {}
@@ -198,12 +181,12 @@ for t in time_horizon:
 
 
 # Initial investment
-init_investment_expr =   (capex_photovoltaic * capacity_photovoltaic 
-                    + capex_wind * capacity_wind
-                    + capex_PEM_electrolyzer * capacity_PEM_electrolyzer
-                    + capex_alkaline_electrolyzer * capacity_alkaline_electrolyzer
-                    + capex_FT_synthesis * capacity_FT_synthesis
-                    + capex_ammonia_synthesis * capacity_ammonia_synthesis
+init_investment_expr =   (capex['photovoltaic'] * capacity_photovoltaic 
+                    + capex['wind'] * capacity_wind
+                    + capex['PEM_electrolyzer'] * capacity_PEM_electrolyzer
+                    + capex['alkaline_electrolyzer'] * capacity_alkaline_electrolyzer
+                    + capex['FT_synthesis'] * capacity_FT_synthesis
+                    + capex['ammonia_synthesis'] * capacity_ammonia_synthesis
                     + capex['ammonia_splitting'] * capacity_ammonia_splitting
 )
 
@@ -237,8 +220,8 @@ for c in customers:
         model.addConstr(y[c, t] >= x[c])
 
 # Add constraint for area limitation
-model.addConstr(capacity_photovoltaic / capacity_per_unit_area_photovoltaic 
-                + capacity_wind / capacity_per_unit_area_wind <= 9)
+model.addConstr(capacity_photovoltaic / capacity_per_unit_area['photovoltaic']
+                + capacity_wind / capacity_per_unit_area['wind'] <= 9)
 
 # Linking constraint between produced energy and required energy
 model.addConstr(capacity_photovoltaic * operating_hours_photovoltaic 
@@ -292,6 +275,8 @@ model.addConstr(x_transport['jetfuel'] <= x['Customer_3_Airport'])
 
 # If no hydrogen is transported, the customer is not being served. But also if hydrogen is transported, that doesn't mean the steel plant is supplied
 # model.addConstr(x_transport['hydrogen'] >= x['Customer_1_Steel_Plant'])
+for t in time_horizon:
+    model.addConstr(transported_hydrogen[t-1] <= x_transport['hydrogen'] * gp.GRB.INFINITY)
 
 # Hydrogen can only either be transported or split in Rotterdam. If the steel plant is supplied, hydrogen needs to be either split or transported
 model.addConstr(x_ammonia_splitting + x_transport['hydrogen'] <= 1)
@@ -319,44 +304,47 @@ for c in customers:
         print(f"{c} is not selected")
 
 # Print the capacity of photovoltaic and wind
-print(f"capacity of photovoltaic used: {capacity_photovoltaic.x} GW, i.e. a yearly production of {capacity_photovoltaic.x * operating_hours_photovoltaic} GWh")
-print(f"capacity of wind power used: {capacity_wind.x} GW, i.e. a yearly production of {capacity_wind.x * operating_hours_wind} GWh")
-print(f"capacity of PEM electrolyzer: {round(capacity_PEM_electrolyzer.x, 2)} GW, i.e. a yearly production of {round(capacity_PEM_electrolyzer.x, 2) * operating_hours_PEM_electrolyzer} GWh")
-print(f"capacity of alkaline electrolyzer: {round(capacity_alkaline_electrolyzer.x, 2)} GW, i.e. a yearly production of {round(capacity_alkaline_electrolyzer.x, 2) * operating_hours_alkaline_electrolyzer} GWh")
+print(f"capacity of photovoltaic used: {round(capacity_photovoltaic.x, 2)} GW, i.e. a yearly energy demand of {round(capacity_photovoltaic.x * operating_hours_photovoltaic, 2)} GWh")
+print(f"capacity of wind power used: {capacity_wind.x} GW, i.e. a yearly energy demand of {round(capacity_wind.x * operating_hours_wind, 2)} GWh")
+print(f"capacity of PEM electrolyzer: {round(capacity_PEM_electrolyzer.x, 2)} GW, i.e. a yearly energy demand of {round(capacity_PEM_electrolyzer.x, 2) * operating_hours_PEM_electrolyzer} GWh")
+print(f"capacity of alkaline electrolyzer: {round(capacity_alkaline_electrolyzer.x, 2)} GW, i.e. a yearly energy demand of {round(capacity_alkaline_electrolyzer.x, 2) * operating_hours_alkaline_electrolyzer} GWh")
 
 # Print the supply for each customer
 for c in customers:
     supply_values = [y[c, t].x for t in time_horizon]
     print(f"Supply to {c}: {supply_values} GWh")
 
-# Print all vars
-all_vars = model.getVars()
-values = model.getAttr("X", all_vars)
-names = model.getAttr("VarName", all_vars)
-
-# for name, val in zip(names, values):
-#     print(f"{name} = {val}")
-
+# Print all variables related to transport
 print("x_ammonia_splitting: ", x_ammonia_splitting.x)
+print("x_transport_ammonia: ", x_transport['ammonia'].x)
 print("x_transport_hydrogen: ", x_transport['hydrogen'].x)
-transported_ammonia_values = [expr.getValue() for expr in transported_ammonia]
-transported_jetfuel_values = [expr.getValue() for expr in transported_jetfuel]
-transported_hydrogen_values = [expr.getValue() for expr in transported_hydrogen]
+transported_ammonia_values = [round(expr.getValue(),2) for expr in transported_ammonia]
+transported_jetfuel_values = [round(expr.getValue(),2) for expr in transported_jetfuel]
+transported_hydrogen_values = [round(expr.getValue(),2) for expr in transported_hydrogen]
 
 print("transported_ammonia:", transported_ammonia_values)
 print("transported_jetfuel:", transported_jetfuel_values)
 print("transported_hydrogen:", transported_hydrogen_values)
 
+# Print all variables related to the CO2 source
+print("x_dac:", x_dac.x)
+print("x_point_source:", x_point_source.x) 
+print("point_source_availability:", [point_source_availability[t-1] for t in time_horizon]) 
+print("point_source_amount:", [point_source_amount[t].x for t in time_horizon])
+print("dac_amount:", [dac_amount[t].x for t in time_horizon])
 
+print("init_investment:", init_investment_var.x)
 
-# print("transported_jetfuel:", [transported_jetfuel[t-1] for t in time_horizon])
-# print("x_dac:", x_dac.x)
-# print("x_point_source:", x_point_source.x) 
-# print("point_source_availability:", [point_source_availability[t-1] for t in time_horizon]) 
-# print("point_source_amount:", [point_source_amount[t].x for t in time_horizon])
-# print("dac_amount:", [dac_amount[t].x for t in time_horizon])
 # print("transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel", [transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel for t in time_horizon])
 # print("dac_costs:", [300 * dac_amount[t].x * x_dac for t in time_horizon])
 # print("cash_inflow_customer_1: ", [model.getVarByName(f'y_Customer_1_Steel_Plant_{i}').x * price_per_unit['hydrogen'] for i in range(1, 11)])
 # print("transported_ammonia: ", transported_ammonia)
 # print("transported_hydrogen", transported_hydrogen)
+
+# Print all vars
+# all_vars = model.getVars()
+# values = model.getAttr("X", all_vars)
+# names = model.getAttr("VarName", all_vars)
+
+# # for name, val in zip(names, values):
+# #     print(f"{name} = {val}")

@@ -1,0 +1,3 @@
+Consider machinery in electricity capacity constraint (capacity wind + solar > capacity electrolysers)
+--> What if it's not set up in Marocco? (Most advantegous state would be to set it up in rotterdam, because then the constraint doesn't apply)
+

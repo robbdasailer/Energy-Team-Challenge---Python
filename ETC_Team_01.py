@@ -293,6 +293,9 @@ model.addConstr(init_investment_var <= 2*10**9)
 # Solve the model
 model.optimize()
 
+print('cash_outflow_photovoltaic:', cash_outflow_photovoltaic.getValue())
+
+
 # Print the final NPV
 print(f"The maximized NPV is {model.ObjVal}")
 
@@ -334,6 +337,14 @@ print("point_source_amount:", [point_source_amount[t].x for t in time_horizon])
 print("dac_amount:", [dac_amount[t].x for t in time_horizon])
 
 print("init_investment:", init_investment_var.x)
+LCOH = {
+    'PEM_electrolyzer': (capex['PEM_electrolyzer'] * capacity_PEM_electrolyzer.x + gp.quicksum((cash_outflow_PEM_electrolyzer.getValue()) / ((1 + i) ** t) for t in time_horizon))
+    / (capacity_PEM_electrolyzer.x * operating_hours_PEM_electrolyzer * efficiency_PEM_electrolyzer * (max(time_horizon)-1)),
+    # 'alkaline_electrolyzer': (capex['alkaline_electrolyzer'] * capacity_alkaline_electrolyzer.x + gp.quicksum((cash_outflow_alkaline_electrolyzer) / ((1 + i) ** t)    for t in time_horizon))
+    # /(capacity_alkaline_electrolyzer.x*operating_hours_alkaline_electrolyzer*efficiency_alkaline_electrolyzer),
+}
+print("LCOH PEM", LCOH['PEM_electrolyzer'])
+# print("LCOH alkaline", LCOH['alkaline_electrolyzer'])
 
 # print("transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel", [transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel for t in time_horizon])
 # print("dac_costs:", [300 * dac_amount[t].x * x_dac for t in time_horizon])

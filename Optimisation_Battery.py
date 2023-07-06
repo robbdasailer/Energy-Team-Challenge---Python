@@ -44,10 +44,11 @@ NPV = (cap_PV * capex['PV'] + cap_bat * capex['Bat'] + cap_EL * capex['EL'])+RBF
 model.setObjective(NPV, sense=gp.GRB.MINIMIZE)
 
 #model.addConstr(cap_EL >= cap_PV * (1 - x_bat), name="constr1")
-#model.addConstr(cap_bat >= (cap_PV * 6.3 - cap_EL * (24 - 6.3)) * x_bat, name="constr2")
+#model.addConstr(cap_bat >= (cap_PV * 6.3 - cap_EL * (24 - 12)) * x_bat, name="constr2")
 
 #neu Fabian
 model.addConstr(cap_EL == cap_PV * (t_vl/24)*x_bat+cap_PV*(1-x_bat), name="constr1")
+
 model.addConstr(cap_bat >= (cap_PV * 6.3 - cap_EL * t_x) * x_bat, name="constr2")
 
 

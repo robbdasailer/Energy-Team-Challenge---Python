@@ -17,7 +17,7 @@ t_x=12 #noch korrekten Wert aus Sonnenprofil einfügen!!
 capex = {
     'PV': 650 * 10 ** 6,     # €/GW
     'EL': 700 * 10 ** 6,     # €/GW
-    'Bat': 660 * 10 ** 6,   # €/GWh
+    'Bat': 10 * 10 ** 6,   # €/GWh
 }
 
 opex = {
@@ -26,7 +26,7 @@ opex = {
     'Bat': 0.01 * capex['Bat']   # €/GWh
 }
 
-i=0.05 #Zins
+i=0.1 #Zins
 a=30 #Jahre
 RBF=(((1+i)**a)-1)/(((1+i)**a)*i)
 
@@ -42,9 +42,6 @@ model.update()
 NPV = (cap_PV * capex['PV'] + cap_bat * capex['Bat'] + cap_EL * capex['EL'])+RBF*(cap_PV * opex['PV'] + cap_bat * opex['Bat'] + cap_EL * opex['EL'])
 
 model.setObjective(NPV, sense=gp.GRB.MINIMIZE)
-
-#model.addConstr(cap_EL >= cap_PV * (1 - x_bat), name="constr1")
-#model.addConstr(cap_bat >= (cap_PV * 6.3 - cap_EL * (24 - 12)) * x_bat, name="constr2")
 
 #neu Fabian
 model.addConstr(cap_EL == cap_PV * (t_vl/24)*x_bat+cap_PV*(1-x_bat), name="constr1")

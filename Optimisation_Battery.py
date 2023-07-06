@@ -9,7 +9,7 @@ import gurobipy as gp
 # Create a Gurobi model
 model = gp.Model()
 
-cap_PV = 1.6
+cap_PV = 1
 t_vl=6.3
 t_x=12 #noch korrekten Wert aus Sonnenprofil einfügen!!
 

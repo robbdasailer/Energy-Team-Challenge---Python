@@ -36,7 +36,7 @@ capacity_per_unit_area = {
 }
 
 # Define battery capacity in GWh
-capacity_battery = 5
+# capacity_battery = 3.5 #3.74
 
 # CO2 point source availabilty in tCO2 /a
 m = - 150000 / (2050-2023)
@@ -60,7 +60,7 @@ capex = {
     'FT_synthesis': 1200 * 10 **6,
     'ammonia_synthesis': 1400 * 10 **6,
     'ammonia_splitting': 1000 * 10 **6, #needs to be investigated
-    'battery': 200 * 10**6 #€/GWh
+    'battery': 250 * 10**6 #€/GWh
 }
 
 opex = {
@@ -70,7 +70,7 @@ opex = {
     'alkaline_electrolyzer': 0.04 * capex['alkaline_electrolyzer'],
     'FT_synthesis': 0.05 * capex['FT_synthesis'],
     'ammonia_synthesis': 0.05 * capex['ammonia_synthesis'],
-    'ammonia_splitting': 0.05 * capex['ammonia_splitting'],
+    'ammonia_splitting': 0.01 * capex['ammonia_splitting'],
     'battery': 0 * capex['battery']
 }
 
@@ -173,13 +173,13 @@ cash_outflow_photovoltaic = opex['photovoltaic'] * capacity_photovoltaic
 cash_outflow_wind = opex['wind'] * capacity_wind
 cash_outflow_PEM_electrolyzer = opex['PEM_electrolyzer'] * capacity_PEM_electrolyzer
 cash_outflow_alkaline_electrolyzer = opex['alkaline_electrolyzer'] * capacity_alkaline_electrolyzer
-cash_outflow_FT_synthesis = [opex['FT_synthesis'] * capacity_FT_synthesis + point_source_costs[t-1] + dac_costs[t-1] for t in time_horizon]
+cash_outflow_FT_synthesis = opex['FT_synthesis'] * capacity_FT_synthesis
 cash_outflow_ammonia_synthesis = opex['ammonia_synthesis'] * capacity_ammonia_synthesis
 cash_outflow_ammonia_splitting = opex['ammonia_splitting'] * capacity_ammonia_splitting
 cash_outflow_transport = [transported_hydrogen[t-1] * transport_costs["hydrogen"] + transported_ammonia[t-1] * transport_costs["ammonia"] + transported_jetfuel[t-1] * transport_costs["jetfuel"] for t in time_horizon]
 cash_outflow_co2 = [70 * y['Customer_3_Airport', t] * CO2_demand_per_unit_jetfuel for t in time_horizon]
-cash_outflow_battery = capacity_battery * opex['battery']
-
+# cash_outflow_battery = capacity_battery * opex['battery']
+cash_outflow_battery = 3.15 * capacity_photovoltaic * opex['battery']
 
 # Initial investment
 init_investment_expr =   (capex['photovoltaic'] * capacity_photovoltaic 
@@ -189,7 +189,8 @@ init_investment_expr =   (capex['photovoltaic'] * capacity_photovoltaic
                     + capex['FT_synthesis'] * capacity_FT_synthesis
                     + capex['ammonia_synthesis'] * capacity_ammonia_synthesis
                     + capex['ammonia_splitting'] * capacity_ammonia_splitting
-                    + capex['battery'] * capacity_battery
+                    # + capex['battery'] * capacity_battery
+                    + capex['battery'] * capacity_photovoltaic * 3.15
 )
 
 # Set the objective function to maximize dynamically calculated NPV
@@ -201,7 +202,7 @@ objective = - init_investment_var + gp.quicksum(
     - cash_outflow_wind
     - cash_outflow_PEM_electrolyzer
     - cash_outflow_alkaline_electrolyzer
-    - cash_outflow_FT_synthesis[t - 1]
+    - cash_outflow_FT_synthesis
     - cash_outflow_ammonia_synthesis
     - cash_outflow_ammonia_splitting
     - cash_outflow_transport[t - 1]
@@ -260,9 +261,13 @@ for t in time_horizon:
 for t in time_horizon:
     model.addConstr(transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel  <= point_source_availability[t-1] * x_point_source + gp.GRB.INFINITY * x_dac)
 
+# The ammonia splitting capacity must be 
+for t in time_horizon:
+    model.addConstr(capacity_ammonia_splitting >= (y['Customer_1_Steel_Plant',t] / 0.7) * x_ammonia_splitting + (y['Customer_3_Airport',t] / (0.7*0.75*0.71)) * x_ammonia_splitting)
+
 # Couple the CO2 captured from the air to the transported jet fuel
-# for t in time_horizon:
-#     model.addConstr(point_source_amount[t] * x_point_source + dac_amount[t] * x_dac == transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel)
+for t in time_horizon:
+    model.addConstr(point_source_amount[t] * x_point_source + dac_amount[t] * x_dac == transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel)
 
 # When dac_amount = [0, 0, 0, ..] x_dac should be zero, too
 for t in time_horizon:
@@ -294,6 +299,8 @@ model.addConstr(x_ammonia_splitting + x_transport['hydrogen'] >= x['Customer_1_S
 # Initial investment must be lower than 2bn
 model.addConstr(init_investment_var <= 2*10**9)
 
+
+
 # Solve the model
 model.optimize()
 
@@ -315,6 +322,7 @@ print(f"capacity of photovoltaic used: {round(capacity_photovoltaic.x, 2)} GW, i
 print(f"capacity of wind power used: {capacity_wind.x} GW, i.e. a yearly energy demand of {round(capacity_wind.x * operating_hours_wind, 2)} GWh")
 print(f"capacity of PEM electrolyzer: {round(capacity_PEM_electrolyzer.x, 2)} GW, i.e. a yearly energy demand of {round(capacity_PEM_electrolyzer.x, 2) * operating_hours_PEM_electrolyzer} GWh")
 print(f"capacity of alkaline electrolyzer: {round(capacity_alkaline_electrolyzer.x, 2)} GW, i.e. a yearly energy demand of {round(capacity_alkaline_electrolyzer.x, 2) * operating_hours_alkaline_electrolyzer} GWh")
+print(f"capacity of ammonia splitting: {round(capacity_ammonia_splitting.x, 2)} GW, i.e. a yearly energy demand of {round(capacity_ammonia_splitting.x, 2) * operating_hours_ammonia_splitting} GWh")
 
 # Print the supply for each customer
 for c in customers:

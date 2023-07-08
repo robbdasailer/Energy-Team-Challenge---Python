@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Jul  8 14:06:44 2023
-
-@author: fabia
-"""
-import csv
 import gurobipy as gp
 
 # Overall units:
@@ -67,7 +60,7 @@ capex = {
     'FT_synthesis': 1200 * 10 **6,
     'ammonia_synthesis': 1400 * 10 **6,
     'ammonia_splitting': 1000 * 10 **6, #needs to be investigated
-    'battery': 300 * 10**6 #€/GWh
+    'battery': 250 * 10**6 #€/GWh
 }
 
 opex = {
@@ -201,7 +194,7 @@ init_investment_expr =   (capex['photovoltaic'] * capacity_photovoltaic
 )
 
 # Set the objective function to maximize dynamically calculated NPV
-objective = - init_investment_var + gp.quicksum(
+objective = - 0.5 * init_investment_var - 0.5 * init_investment_var / (1+i) + gp.quicksum(
     ( cash_inflow_customer_1[t - 1] 
     + cash_inflow_customer_2[t - 1] 
     + cash_inflow_customer_3[t - 1] 
@@ -216,11 +209,14 @@ objective = - init_investment_var + gp.quicksum(
     - cash_outflow_co2[t-1]
     - cash_outflow_battery
     ) 
-    / ((1 + i) ** t)
+    / ((1 + i) ** (t+2))
     for t in time_horizon
 )
 
 model.setObjective(objective, sense=gp.GRB.MAXIMIZE)
+
+# Define Big M 
+M = 10**6
 
 model.addConstr(init_investment_var == init_investment_expr, name="init_investment_eq")
 
@@ -259,7 +255,7 @@ for t in time_horizon:
                     + y['Customer_2_Chemical_Plant', t] / efficiency_ammonia_synthesis
                     + y['Customer_3_Airport', t] / efficiency_FT_synthesis
                     )
-    # x_ammonia_splitting
+
 # The capacity of the FT synthesis must meet demand of chemical plant
 for t in time_horizon:
     model.addConstr(capacity_ammonia_synthesis * operating_hours_ammonia_synthesis >= y['Customer_2_Chemical_Plant', t])
@@ -268,9 +264,11 @@ for t in time_horizon:
 for t in time_horizon:
     model.addConstr(transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel  <= point_source_availability[t-1] * x_point_source + gp.GRB.INFINITY * x_dac)
 
-# The ammonia splitting capacity must be 
+# The ammonia splitting capacity must be
 for t in time_horizon:
     model.addConstr(capacity_ammonia_splitting >= (y['Customer_1_Steel_Plant',t] / 0.7) * x_ammonia_splitting + (y['Customer_3_Airport',t] / (0.7*0.75*0.71)) * x_ammonia_splitting)
+
+model.addConstr(capacity_ammonia_splitting <= M * x_ammonia_splitting)
 
 # Couple the CO2 captured from the air to the transported jet fuel
 for t in time_horizon:
@@ -304,10 +302,9 @@ model.addConstr(x_ammonia_splitting + x_transport['hydrogen'] >= x['Customer_1_S
 #     model.addConstr(transported_ammonia[t-1] + transported_hydrogen[t-1] *(1-x_transport['ammonia']) - y['Customer_1_Steel_Plant'] * x_transport['hydrogen'] - y['Customer_2_Chemical_Plant'] * x_transport['jetfuel'] >= y['Customer_2_Chemical_Plant', t])
 
 # Battery capacity is linked to wind and photovoltaic
-model.addConstr(capacity_battery == 1.2*(capacity_photovoltaic * 6.3 - capacity_PEM_electrolyzer * 12) * x1 
-                                    + 1.2*(capacity_wind * 13.7 - capacity_PEM_electrolyzer * 22 ) *x2)
+model.addConstr(capacity_battery == (capacity_photovoltaic * 6.3 - capacity_PEM_electrolyzer * 12) * x1 
+                                    + (capacity_wind * 13.7 - capacity_PEM_electrolyzer * 12 ) *x2)
 
-M = 10**6
 
 model.addConstr(x1 * M >= capacity_photovoltaic)
 model.addConstr(x2 * M >= capacity_wind)
@@ -339,7 +336,9 @@ print(f"capacity of photovoltaic used: {round(capacity_photovoltaic.x, 2)} GW, i
 print(f"capacity of wind power used: {capacity_wind.x} GW, i.e. a yearly energy demand of {round(capacity_wind.x * operating_hours_wind, 2)} GWh")
 print(f"capacity of PEM electrolyzer: {round(capacity_PEM_electrolyzer.x, 2)} GW, i.e. a yearly energy demand of {round(capacity_PEM_electrolyzer.x, 2) * operating_hours_PEM_electrolyzer} GWh")
 print(f"capacity of alkaline electrolyzer: {round(capacity_alkaline_electrolyzer.x, 2)} GW, i.e. a yearly energy demand of {round(capacity_alkaline_electrolyzer.x, 2) * operating_hours_alkaline_electrolyzer} GWh")
+print(f"capacity of FT-synthesis: {round(capacity_FT_synthesis.x, 2)}" )
 print(f"capacity of ammonia splitting: {round(capacity_ammonia_splitting.x, 2)} GW, i.e. a yearly energy demand of {round(capacity_ammonia_splitting.x, 2) * operating_hours_ammonia_splitting} GWh")
+print(f"capacity of ammonia synthesis: {round(capacity_ammonia_synthesis.x, 2)} GW, i.e. a yearly energy demand of {round(capacity_ammonia_synthesis.x, 2) * operating_hours_ammonia_synthesis} GWh")
 print(f"capacity of battery: {round(capacity_battery.x, 2)} GWh")
 
 # Print the supply for each customer
@@ -393,21 +392,3 @@ print("LCOH PEM", LCOH['PEM_electrolyzer'])
 
 # # for name, val in zip(names, values):
 # #     print(f"{name} = {val}")
-
-
-variable_values={}
-for v in model.getVars():
-    variable_values[v.VarName]=v.x
-    
-csv_file_path = 'results.csv'
-
-with open(csv_file_path, "w", newline="") as file:
-    writer = csv.writer(file)
-
-    # Write the header row (variable names)
-    writer.writerow(["Variable", "Value"])
-
-    # Write the variable values row by row
-    for var_name, var_value in variable_values.items():
-        writer.writerow([var_name, var_value])    
-    

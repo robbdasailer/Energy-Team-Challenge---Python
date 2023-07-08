@@ -1,4 +1,5 @@
 import gurobipy as gp
+import csv
 
 # Overall units:
     # energy: GWh
@@ -60,7 +61,7 @@ capex = {
     'FT_synthesis': 1200 * 10 **6,
     'ammonia_synthesis': 1400 * 10 **6,
     'ammonia_splitting': 1000 * 10 **6, #needs to be investigated
-    'battery': 250 * 10**6 #€/GWh
+    'battery': 300 * 10**6 #€/GWh
 }
 
 opex = {
@@ -302,9 +303,8 @@ model.addConstr(x_ammonia_splitting + x_transport['hydrogen'] >= x['Customer_1_S
 #     model.addConstr(transported_ammonia[t-1] + transported_hydrogen[t-1] *(1-x_transport['ammonia']) - y['Customer_1_Steel_Plant'] * x_transport['hydrogen'] - y['Customer_2_Chemical_Plant'] * x_transport['jetfuel'] >= y['Customer_2_Chemical_Plant', t])
 
 # Battery capacity is linked to wind and photovoltaic
-model.addConstr(capacity_battery == (capacity_photovoltaic * 6.3 - capacity_PEM_electrolyzer * 12) * x1 
-                                    + (capacity_wind * 13.7 - capacity_PEM_electrolyzer * 12 ) *x2)
-
+model.addConstr(capacity_battery == 1.2*(capacity_photovoltaic * 6.3 - capacity_PEM_electrolyzer * 12) * x1 
+                                    + 1.2*(capacity_wind * 13.7 - capacity_PEM_electrolyzer * 22 ) *x2)
 
 model.addConstr(x1 * M >= capacity_photovoltaic)
 model.addConstr(x2 * M >= capacity_wind)
@@ -392,3 +392,22 @@ print("LCOH PEM", LCOH['PEM_electrolyzer'])
 
 # # for name, val in zip(names, values):
 # #     print(f"{name} = {val}")
+
+
+# Export values to csv File
+variable_values={}
+for v in model.getVars():
+    variable_values[v.VarName]=v.x
+    
+# csv_file_path = 'results.csv'
+
+# with open(csv_file_path, "w", newline="") as file:
+#     writer = csv.writer(file)
+
+#     # Write the header row (variable names)
+#     writer.writerow(["Variable", "Value"])
+
+#     # Write the variable values row by row
+#     for var_name, var_value in variable_values.items():
+#         writer.writerow([var_name, var_value])    
+    

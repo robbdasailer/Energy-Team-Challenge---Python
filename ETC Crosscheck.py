@@ -198,11 +198,11 @@ NPV = - 0.5 * init_investment / (1+i) - 0.5 * init_investment / (1+i)**2 + sum((
 print("Resulting NPV: ", NPV)
 
 NPV_t = {}
-NPV_t[0] = - 0.5 * init_investment / (1+i)
-NPV_t[1] = NPV_t[0] - 0.5 * init_investment / (1+i)** 2
+NPV_t[0] = - 0.5 * init_investment 
+NPV_t[1] = NPV_t[0] - 0.5 * init_investment / (1+i)
 
 for t in time_horizon:
-    NPV_t[t+1] = NPV_t[t] + ( cash_inflow[t-1] - cash_outflow[t-1]) / ((1 + i) ** (t+2))
+    NPV_t[t+1] = NPV_t[t] + ( cash_inflow[t-1] - cash_outflow[t-1]) / ((1 + i) ** (t+1))
 for index in NPV_t:
     print("NPV " + str(index+2023) + ": " + str(NPV_t[index]))
 

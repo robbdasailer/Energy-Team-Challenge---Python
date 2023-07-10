@@ -88,15 +88,16 @@ deprecation_time = {
 # Define operating hours of photovoltaic and wind in h/year
 operating_hours_photovoltaic = 2300
 operating_hours_wind = 5000
-operating_hours_PEM_electrolyzer = operating_hours_alkaline_electrolyzer = 24*365
-operating_hours_FT_synthesis = operating_hours_ammonia_synthesis = operating_hours_ammonia_splitting = 7500
+operating_hours_PEM_electrolyzer = operating_hours_alkaline_electrolyzer = 24*365 * 0.9
+operating_hours_FT_synthesis = operating_hours_ammonia_synthesis = operating_hours_ammonia_splitting = 24*365 * 0.9
 
 # Define efficiency of Electrolyzers
 efficiency_PEM_electrolyzer = 0.7
 efficiency_alkaline_electrolyzer = 0.65
-efficiency_FT_synthesis = 0.71*0.75
+efficiency_FT_synthesis = 0.75
 efficiency_ammonia_synthesis = 0.8
 efficiency_ammonia_splitting = 0.8 # needs to be researched
+# efficiency_battery = 0.95
 
 # Transport costs in €/GWh
 transport_costs = {
@@ -254,7 +255,7 @@ for t in time_horizon:
                     + capacity_alkaline_electrolyzer * operating_hours_alkaline_electrolyzer * efficiency_alkaline_electrolyzer 
                     >= y['Customer_1_Steel_Plant', t]
                     + y['Customer_2_Chemical_Plant', t] / efficiency_ammonia_synthesis
-                    + y['Customer_3_Airport', t] / efficiency_FT_synthesis
+                    + y['Customer_3_Airport', t] /0.71 / efficiency_FT_synthesis
                     )
 
 # The capacity of the FT synthesis must meet demand of chemical plant
@@ -267,7 +268,7 @@ for t in time_horizon:
 
 # The ammonia splitting capacity must be
 for t in time_horizon:
-    model.addConstr(capacity_ammonia_splitting >= (y['Customer_1_Steel_Plant',t] / 0.7) * x_ammonia_splitting + (y['Customer_3_Airport',t] / (0.7*0.75*0.71)) * x_ammonia_splitting)
+    model.addConstr(capacity_ammonia_splitting >= (y['Customer_1_Steel_Plant',t] / 0.7) * x_ammonia_splitting + (y['Customer_3_Airport',t] / (0.7*0.75)) * x_ammonia_splitting)
 
 model.addConstr(capacity_ammonia_splitting <= M * x_ammonia_splitting)
 
@@ -282,7 +283,7 @@ for t in time_horizon:
 
 # The capacity of the ammonia synthesis must meet demand of airport
 for t in time_horizon:
-    model.addConstr(capacity_FT_synthesis * operating_hours_FT_synthesis >= y['Customer_3_Airport', t])
+    model.addConstr(capacity_FT_synthesis * operating_hours_FT_synthesis >= y['Customer_3_Airport', t] / 0.71)
 
 # If ammonia is transported, then the cusomer will be supplied. Same for jet fuel
 model.addConstr(x_transport['ammonia'] <= x['Customer_2_Chemical_Plant'])
@@ -304,14 +305,14 @@ model.addConstr(x_ammonia_splitting + x_transport['hydrogen'] >= x['Customer_1_S
 
 # Battery capacity is linked to wind and photovoltaic
 model.addConstr(capacity_battery == 1.2*(capacity_photovoltaic * 6.3 - capacity_PEM_electrolyzer * 12) * x1 
-                                    + 1.2*(capacity_wind * 13.7 - capacity_PEM_electrolyzer * 20 ) *x2)
+                                    + 1.2*(capacity_wind * 13.7 - capacity_PEM_electrolyzer * 15 ) *x2)
 
 model.addConstr(x1 * M >= capacity_photovoltaic)
 model.addConstr(x2 * M >= capacity_wind)
 model.addConstr(x1 + x2 <= 1)
 
 # Initial investment must be lower than 2bn
-model.addConstr(init_investment_var <= 2*10**9)
+model.addConstr((0.5 + 0.5 / 1+i)* init_investment_var <= 2*10**9)
 
 
 
@@ -349,16 +350,16 @@ for c in customers:
 # print("x2: ", x2.x)
 
 # Print all variables related to transport
-# print("x_ammonia_splitting: ", x_ammonia_splitting.x)
-# print("x_transport_ammonia: ", x_transport['ammonia'].x)
-# print("x_transport_hydrogen: ", x_transport['hydrogen'].x)
-# transported_ammonia_values = [round(expr.getValue(),2) for expr in transported_ammonia]
-# transported_jetfuel_values = [round(expr.getValue(),2) for expr in transported_jetfuel]
-# transported_hydrogen_values = [round(expr.getValue(),2) for expr in transported_hydrogen]
+print("x_ammonia_splitting: ", x_ammonia_splitting.x)
+print("x_transport_ammonia: ", x_transport['ammonia'].x)
+print("x_transport_hydrogen: ", x_transport['hydrogen'].x)
+transported_ammonia_values = [round(expr.getValue(),2) for expr in transported_ammonia]
+transported_jetfuel_values = [round(expr.getValue(),2) for expr in transported_jetfuel]
+transported_hydrogen_values = [round(expr.getValue(),2) for expr in transported_hydrogen]
 
-# print("transported_ammonia:", transported_ammonia_values)
-# print("transported_jetfuel:", transported_jetfuel_values)
-# print("transported_hydrogen:", transported_hydrogen_values)
+print("transported_ammonia:", transported_ammonia_values)
+print("transported_jetfuel:", transported_jetfuel_values)
+print("transported_hydrogen:", transported_hydrogen_values)
 
 # Print all variables related to the CO2 source
 # print("x_dac:", x_dac.x)

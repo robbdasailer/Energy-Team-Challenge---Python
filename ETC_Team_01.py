@@ -196,7 +196,7 @@ init_investment_expr =   (capex['photovoltaic'] * capacity_photovoltaic
 )
 
 # Set the objective function to maximize dynamically calculated NPV
-objective = - 0.5 * init_investment_var / (1+i) - 0.5 * init_investment_var / (1+i)**2 + gp.quicksum(
+objective = - 0.5 * init_investment_var - 0.5 * init_investment_var / (1+i) + gp.quicksum(
     ( cash_inflow_customer_1[t - 1] 
     + cash_inflow_customer_2[t - 1] 
     + cash_inflow_customer_3[t - 1] 
@@ -211,7 +211,7 @@ objective = - 0.5 * init_investment_var / (1+i) - 0.5 * init_investment_var / (1
     - cash_outflow_co2[t-1]
     - cash_outflow_battery
     ) 
-    / ((1 + i) ** (t+2))
+    / ((1 + i) ** (t+1))
     for t in time_horizon
 )
 
@@ -251,8 +251,8 @@ for t in time_horizon:
 
 # The capacity of the electrolyzers must meet demands in GWh
 for t in time_horizon:
-    model.addConstr(capacity_PEM_electrolyzer * operating_hours_PEM_electrolyzer * efficiency_PEM_electrolyzer 
-                    + capacity_alkaline_electrolyzer * operating_hours_alkaline_electrolyzer * efficiency_alkaline_electrolyzer 
+    model.addConstr(capacity_PEM_electrolyzer * operating_hours_PEM_electrolyzer
+                    + capacity_alkaline_electrolyzer * operating_hours_alkaline_electrolyzer  
                     >= y['Customer_1_Steel_Plant', t]
                     + y['Customer_2_Chemical_Plant', t] / efficiency_ammonia_synthesis
                     + y['Customer_3_Airport', t] /0.71 / efficiency_FT_synthesis
@@ -305,7 +305,7 @@ model.addConstr(x_ammonia_splitting + x_transport['hydrogen'] >= x['Customer_1_S
 
 # Battery capacity is linked to wind and photovoltaic
 model.addConstr(capacity_battery == 1.2*(capacity_photovoltaic * 6.3 - capacity_PEM_electrolyzer * 12) * x1 
-                                    + 1.2*(capacity_wind * 13.7 - capacity_PEM_electrolyzer * 15 ) *x2)
+                                    + 1.2*(capacity_wind * 13.7 - capacity_PEM_electrolyzer * 20 ) *x2)
 
 model.addConstr(x1 * M >= capacity_photovoltaic)
 model.addConstr(x2 * M >= capacity_wind)
@@ -353,6 +353,7 @@ for c in customers:
 print("x_ammonia_splitting: ", x_ammonia_splitting.x)
 print("x_transport_ammonia: ", x_transport['ammonia'].x)
 print("x_transport_hydrogen: ", x_transport['hydrogen'].x)
+print("x_transport_jetfuel", x_transport['jetfuel'].x)
 transported_ammonia_values = [round(expr.getValue(),2) for expr in transported_ammonia]
 transported_jetfuel_values = [round(expr.getValue(),2) for expr in transported_jetfuel]
 transported_hydrogen_values = [round(expr.getValue(),2) for expr in transported_hydrogen]

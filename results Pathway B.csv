@@ -4,7 +4,7 @@ y_Customer_1_Steel_Plant_1,1000.0
 y_Customer_1_Steel_Plant_2,1000.0
 y_Customer_1_Steel_Plant_3,1000.0
 y_Customer_1_Steel_Plant_4,1000.0
-y_Customer_1_Steel_Plant_5,1000.0
+y_Customer_1_Steel_Plant_5,999.9999999999999
 y_Customer_1_Steel_Plant_6,1000.0
 y_Customer_1_Steel_Plant_7,1000.0
 y_Customer_1_Steel_Plant_8,1000.0
@@ -62,7 +62,7 @@ y_Customer_2_Chemical_Plant_28,500.0
 y_Customer_2_Chemical_Plant_29,500.0
 y_Customer_2_Chemical_Plant_30,500.0
 x_Customer_3_Airport,1.0
-y_Customer_3_Airport_1,500.0
+y_Customer_3_Airport_1,499.99999999999994
 y_Customer_3_Airport_2,500.0
 y_Customer_3_Airport_3,500.0
 y_Customer_3_Airport_4,500.0
@@ -94,14 +94,11 @@ y_Customer_3_Airport_29,500.0
 y_Customer_3_Airport_30,500.0
 x1,-0.0
 x2,1.0
-x_point_source,0.0
-x_dac,0.0
+x_point_source,1.0
+x_dac,1.0
 x_ammonia_splitting,0.0
-point_source_amount,0.0
-dac_amount,0.0
-x_transport_hydrogen,1.0
-x_transport_ammonia,1.0
-x_transport_jetfuel,0.0
+point_source_amount,1.0
+dac_amount,129999.0
 init_investment,1505438082.2394202
 capacity_photovoltaic,0.0
 capacity_wind,0.512793427230047

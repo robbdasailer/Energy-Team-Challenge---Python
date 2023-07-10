@@ -122,28 +122,24 @@ x1 = model.addVar(name="x1", vtype=gp.GRB.BINARY)
 x2 = model.addVar(name="x2", vtype=gp.GRB.BINARY)
 
 # Decision variables for the CO2 supply, binary
-x_point_source = {}
-x_dac = {}
-for t in time_horizon:
-    x_point_source[t-1] = model.addVar(name="x_point_source", vtype=gp.GRB.BINARY)
-    x_dac[t-1] = model.addVar(name="x_dac", vtype=gp.GRB.BINARY)
-
+x_point_source = model.addVar(name="x_point_source", vtype=gp.GRB.BINARY)
+x_dac = model.addVar(name="x_dac", vtype=gp.GRB.BINARY)
 
 # Decision variable about the splitting of hydrogen from ammonia
-x_ammonia_splitting = model.addVar(name="x_ammonia_splitting", vtype=gp.GRB.BINARY)
+x_ammonia_splitting = 1 #model.addVar(name="x_ammonia_splitting", vtype=gp.GRB.BINARY)
 
 # Decision variables for the CO2 supply, continous in tons of CO2
 point_source_amount = {}
 dac_amount = {}
 for t in time_horizon:
-    point_source_amount[t-1] = model.addVar(name="point_source_amount", vtype = gp.GRB.CONTINUOUS)
-    dac_amount[t-1] = model.addVar(name="dac_amount", vtype = gp.GRB.CONTINUOUS)
+    point_source_amount[t] = model.addVar(name="point_source_amount", vtype = gp.GRB.CONTINUOUS)
+    dac_amount[t] = model.addVar(name="dac_amount", vtype = gp.GRB.CONTINUOUS)
 
 # Decision variables for transport: variable = 0 if product is not transported, and variable = 1 if product is transported
 x_transport = {}
-x_transport['hydrogen'] = model.addVar(name="x_transport_hydrogen", vtype=gp.GRB.BINARY)
-x_transport['ammonia'] = model.addVar(name="x_transport_ammonia", vtype=gp.GRB.BINARY)
-x_transport['jetfuel'] = model.addVar(name="x_transport_jetfuel", vtype=gp.GRB.BINARY)
+x_transport['hydrogen'] = 0# model.addVar(name="x_transport_hydrogen", vtype=gp.GRB.BINARY)
+x_transport['ammonia'] = 1 # model.addVar(name="x_transport_ammonia", vtype=gp.GRB.BINARY)
+x_transport['jetfuel'] = 0# model.addVar(name="x_transport_jetfuel", vtype=gp.GRB.BINARY)
 
 # Decision variable for the initial investment
 init_investment_var = model.addVar(name="init_investment", vtype=gp.GRB.CONTINUOUS)
@@ -172,8 +168,8 @@ cash_inflow_customer_2 = [price_per_unit['ammonia'] * y['Customer_2_Chemical_Pla
 cash_inflow_customer_3 = [price_per_unit['jetfuel'] * y['Customer_3_Airport', t] / 0.71 for t in time_horizon] # in the task it says, that only 71% of the product is jet fuel, but the other 29% can be sold for the same price
 
 # Define costs for CO2 supply in € ( €/tons * tons * decision variable)
-point_source_costs = [70 * point_source_amount[t-1] * x_point_source[t-1] for t in time_horizon]
-dac_costs = [300 * dac_amount[t-1] * x_dac[t-1] for t in time_horizon]
+point_source_costs = [70 * point_source_amount[t] * x_point_source for t in time_horizon]
+dac_costs = [300 * dac_amount[t] * x_dac for t in time_horizon]
 
 # Define cash outflow per period
 cash_outflow_photovoltaic = opex['photovoltaic'] * capacity_photovoltaic
@@ -268,23 +264,22 @@ for t in time_horizon:
 
 # The CO2 demand of the FT synthesis must not exceed the DAC availability
 for t in time_horizon:
-    model.addConstr(transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel  <= point_source_availability[t-1] * x_point_source[t-1] + gp.GRB.INFINITY * x_dac[t-1])
+    model.addConstr(transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel  <= point_source_availability[t-1] * x_point_source + gp.GRB.INFINITY * x_dac)
 
 # The ammonia splitting capacity must be
 for t in time_horizon:
-    model.addConstr(capacity_ammonia_splitting >= (y['Customer_1_Steel_Plant',t] / 0.7) * x_ammonia_splitting + (y['Customer_3_Airport',t] / (0.7*0.75)) * x_ammonia_splitting)
+    model.addConstr(capacity_ammonia_splitting * operating_hours_ammonia_splitting >= (y['Customer_1_Steel_Plant', t]  + (y['Customer_3_Airport', t] / (0.7 * 0.75))) * x_ammonia_splitting)
 
-model.addConstr(capacity_ammonia_splitting <= M * x_ammonia_splitting)
+# model.addConstr(capacity_ammonia_splitting <= M * x_ammonia_splitting)
 
 # Couple the CO2 captured from the air to the transported jet fuel
 for t in time_horizon:
-    model.addConstr(point_source_amount[t-1] * x_point_source[t-1] + dac_amount[t-1] * x_dac[t-1] == transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel)
+    model.addConstr(point_source_amount[t] * x_point_source + dac_amount[t] * x_dac == transported_jetfuel[t-1] * CO2_demand_per_unit_jetfuel)
 
 # When dac_amount = [0, 0, 0, ..] x_dac should be zero, too
 for t in time_horizon:
-    model.addConstr(x_dac[t-1] <= dac_amount[t-1])
-    model.addConstr(x_point_source[t-1] <= point_source_amount[t-1])
-    model.addConstr(point_source_amount[t-1] <= point_source_availability[t-1])
+    model.addConstr(x_dac <= dac_amount[t])
+    model.addConstr(x_point_source <= point_source_amount[t])
 
 # The capacity of the ammonia synthesis must meet demand of airport
 for t in time_horizon:
@@ -355,10 +350,10 @@ for c in customers:
 # print("x2: ", x2.x)
 
 # Print all variables related to transport
-print("x_ammonia_splitting: ", x_ammonia_splitting.x)
-print("x_transport_ammonia: ", x_transport['ammonia'].x)
-print("x_transport_hydrogen: ", x_transport['hydrogen'].x)
-print("x_transport_jetfuel", x_transport['jetfuel'].x)
+# print("x_ammonia_splitting: ", x_ammonia_splitting.x)
+#print("x_transport_ammonia: ", x_transport['ammonia'].x)
+# print("x_transport_hydrogen: ", x_transport['hydrogen'].x)
+# print("x_transport_jetfuel", x_transport['jetfuel'].x)
 transported_ammonia_values = [round(expr.getValue(),2) for expr in transported_ammonia]
 transported_jetfuel_values = [round(expr.getValue(),2) for expr in transported_jetfuel]
 transported_hydrogen_values = [round(expr.getValue(),2) for expr in transported_hydrogen]
@@ -368,16 +363,11 @@ print("transported_jetfuel:", transported_jetfuel_values)
 print("transported_hydrogen:", transported_hydrogen_values)
 
 # Print all variables related to the CO2 source
-print("CO2 required", [transported_jetfuel[t-1].getValue() * CO2_demand_per_unit_jetfuel for t in time_horizon])
-print("x_dac:", [x_dac[t-1].x for t in time_horizon])
-print("x_point_source:", [x_point_source[t-1].x for t in time_horizon]) 
-print("point_source_availability:", [point_source_availability[t-1] for t in time_horizon]) 
-print("point_source_amount:", [point_source_amount[t-1].x for t in time_horizon])
-print("dac_amount:", [dac_amount[t-1].x for t in time_horizon])
-
-
-cash_outflow_co2_print = [expr.getValue() for expr in cash_outflow_co2]
-print("cash_outflow_co2: ", cash_outflow_co2_print)
+# print("x_dac:", x_dac.x)
+# print("x_point_source:", x_point_source.x) 
+# print("point_source_availability:", [point_source_availability[t-1] for t in time_horizon]) 
+# print("point_source_amount:", [point_source_amount[t].x for t in time_horizon])
+# print("dac_amount:", [dac_amount[t].x for t in time_horizon])
 
 print("init_investment:", init_investment_var.x)
 print("area occupied:", capacity_photovoltaic.x / capacity_per_unit_area['photovoltaic'] + capacity_wind.x / capacity_per_unit_area['wind'])
@@ -440,7 +430,7 @@ variable_values={}
 for v in model.getVars():
     variable_values[v.VarName]=v.x
     
-csv_file_path = 'results.csv'
+csv_file_path = 'results Pathway C.csv'
 
 with open(csv_file_path, "w", newline="") as file:
     writer = csv.writer(file)

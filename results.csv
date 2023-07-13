@@ -62,11 +62,11 @@ y_Customer_2_Chemical_Plant_28,500.0
 y_Customer_2_Chemical_Plant_29,500.0
 y_Customer_2_Chemical_Plant_30,500.0
 x_Customer_3_Airport,1.0
-y_Customer_3_Airport_1,500.0
+y_Customer_3_Airport_1,499.99999999999994
 y_Customer_3_Airport_2,500.0
-y_Customer_3_Airport_3,500.0
-y_Customer_3_Airport_4,500.0
-y_Customer_3_Airport_5,500.0
+y_Customer_3_Airport_3,499.99999999999994
+y_Customer_3_Airport_4,499.99999999999994
+y_Customer_3_Airport_5,499.99999999999994
 y_Customer_3_Airport_6,500.0
 y_Customer_3_Airport_7,500.0
 y_Customer_3_Airport_8,500.0
@@ -76,9 +76,9 @@ y_Customer_3_Airport_11,500.0
 y_Customer_3_Airport_12,500.0
 y_Customer_3_Airport_13,500.0
 y_Customer_3_Airport_14,500.0
-y_Customer_3_Airport_15,500.0
+y_Customer_3_Airport_15,499.99999999999994
 y_Customer_3_Airport_16,500.0
-y_Customer_3_Airport_17,500.0
+y_Customer_3_Airport_17,499.99999999999994
 y_Customer_3_Airport_18,500.0
 y_Customer_3_Airport_19,500.0
 y_Customer_3_Airport_20,500.0
@@ -102,7 +102,7 @@ dac_amount,0.0
 x_transport_hydrogen,1.0
 x_transport_ammonia,1.0
 x_transport_jetfuel,0.0
-init_investment,1505438082.2394202
+init_investment,1349125845.2967083
 capacity_photovoltaic,0.0
 capacity_wind,0.512793427230047
 capacity_PEM_electrolyzer,0.3252114581621302

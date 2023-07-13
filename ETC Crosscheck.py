@@ -14,8 +14,8 @@ time_horizon = range(1, 31)  # Time periods from 1 to 30, including a 2 year con
 # Define selling prices
 price_per_unit = {
     'hydrogen': 210000,
-    'ammonia': 287004,
-    'jetfuel': 315000,
+    'ammonia': 287000,
+    'jetfuel': 252000, 
 }
 
 # Define typical capacity per unit area in GW/km^2
@@ -35,8 +35,8 @@ capex = {
     'alkaline_electrolyzer': 650 * 10 ** 6,
     'FT_synthesis': 1200 * 10 ** 6,
     'ammonia_synthesis': 1400 * 10 ** 6,
-    'ammonia_splitting': 1000 * 10 **6,
-    'battery': 500 * 10 **6, #in €/GWh
+    'ammonia_splitting': 700 * 10 **6,
+    'battery': 250 * 10 **6, #in €/GWh
 }
 
 opex = {

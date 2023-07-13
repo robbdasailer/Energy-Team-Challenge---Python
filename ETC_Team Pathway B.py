@@ -26,8 +26,8 @@ max_demand_customers = {
 # Define selling price in €/GWh
 price_per_unit = {
     'hydrogen': 210000,
-    'ammonia': 287004,
-    'jetfuel': 315000, 
+    'ammonia': 287000,
+    'jetfuel': 252000, 
 }
 
 # Define typical capacity per unit area in GW/km^2
@@ -60,8 +60,8 @@ capex = {
     'alkaline_electrolyzer': 650 * 10 **6,
     'FT_synthesis': 1200 * 10 **6,
     'ammonia_synthesis': 1400 * 10 **6,
-    'ammonia_splitting': 1000 * 10 **6, #needs to be investigated
-    'battery': 500 * 10**6 #€/GWh
+    'ammonia_splitting': 700 * 10 **6, #needs to be investigated
+    'battery': 250 * 10**6 #€/GWh
 }
 
 opex = {
@@ -96,7 +96,7 @@ efficiency_PEM_electrolyzer = 0.7
 efficiency_alkaline_electrolyzer = 0.65
 efficiency_FT_synthesis = 0.75
 efficiency_ammonia_synthesis = 0.8
-efficiency_ammonia_splitting = 0.8 # needs to be researched
+efficiency_ammonia_splitting = 0.7 # needs to be researched
 # efficiency_battery = 0.95
 
 # Transport costs in €/GWh

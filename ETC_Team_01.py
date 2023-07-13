@@ -26,8 +26,8 @@ max_demand_customers = {
 # Define selling price in €/GWh
 price_per_unit = {
     'hydrogen': 210000,
-    'ammonia': 287004,
-    'jetfuel': 315000, 
+    'ammonia': 287000,
+    'jetfuel': 252000, 
 }
 
 # Define typical capacity per unit area in GW/km^2
@@ -60,8 +60,8 @@ capex = {
     'alkaline_electrolyzer': 650 * 10 **6,
     'FT_synthesis': 1200 * 10 **6,
     'ammonia_synthesis': 1400 * 10 **6,
-    'ammonia_splitting': 1000 * 10 **6, #needs to be investigated
-    'battery': 500 * 10**6 #€/GWh
+    'ammonia_splitting': 700 * 10 **6, #needs to be investigated
+    'battery': 250 * 10**6 #€/GWh
 }
 
 opex = {
@@ -96,7 +96,7 @@ efficiency_PEM_electrolyzer = 0.7
 efficiency_alkaline_electrolyzer = 0.65
 efficiency_FT_synthesis = 0.75
 efficiency_ammonia_synthesis = 0.8
-efficiency_ammonia_splitting = 0.8 # needs to be researched
+efficiency_ammonia_splitting = 0.7 # needs to be researched
 # efficiency_battery = 0.95
 
 # Transport costs in €/GWh
@@ -170,6 +170,7 @@ transported_hydrogen = [y['Customer_1_Steel_Plant', t] * x_transport['hydrogen']
 cash_inflow_customer_1 = [price_per_unit['hydrogen'] * y['Customer_1_Steel_Plant', t] for t in time_horizon]
 cash_inflow_customer_2 = [price_per_unit['ammonia'] * y['Customer_2_Chemical_Plant', t] for t in time_horizon]
 cash_inflow_customer_3 = [price_per_unit['jetfuel'] * y['Customer_3_Airport', t] / 0.71 for t in time_horizon] # in the task it says, that only 71% of the product is jet fuel, but the other 29% can be sold for the same price
+
 
 # Define costs for CO2 supply in € ( €/tons * tons * decision variable)
 point_source_costs = [70 * point_source_amount[t-1] * x_point_source[t-1] for t in time_horizon]
@@ -274,7 +275,7 @@ for t in time_horizon:
 for t in time_horizon:
     model.addConstr(capacity_ammonia_splitting >= (y['Customer_1_Steel_Plant',t] / 0.7) * x_ammonia_splitting + (y['Customer_3_Airport',t] / (0.7*0.75)) * x_ammonia_splitting)
 
-model.addConstr(capacity_ammonia_splitting <= M * x_ammonia_splitting)
+# model.addConstr(capacity_ammonia_splitting <= M * x_ammonia_splitting)
 
 # Couple the CO2 captured from the air to the transported jet fuel
 for t in time_horizon:

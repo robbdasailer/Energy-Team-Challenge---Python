@@ -66,7 +66,7 @@ y_Customer_3_Airport_1,499.99999999999994
 y_Customer_3_Airport_2,500.0
 y_Customer_3_Airport_3,499.99999999999994
 y_Customer_3_Airport_4,499.99999999999994
-y_Customer_3_Airport_5,499.99999999999994
+y_Customer_3_Airport_5,500.0
 y_Customer_3_Airport_6,500.0
 y_Customer_3_Airport_7,500.0
 y_Customer_3_Airport_8,500.0
@@ -76,10 +76,10 @@ y_Customer_3_Airport_11,500.0
 y_Customer_3_Airport_12,500.0
 y_Customer_3_Airport_13,500.0
 y_Customer_3_Airport_14,500.0
-y_Customer_3_Airport_15,499.99999999999994
-y_Customer_3_Airport_16,500.0
+y_Customer_3_Airport_15,500.0
+y_Customer_3_Airport_16,499.99999999999994
 y_Customer_3_Airport_17,499.99999999999994
-y_Customer_3_Airport_18,500.0
+y_Customer_3_Airport_18,499.99999999999994
 y_Customer_3_Airport_19,500.0
 y_Customer_3_Airport_20,500.0
 y_Customer_3_Airport_21,500.0
@@ -96,7 +96,7 @@ x1,-0.0
 x2,1.0
 x_point_source,0.0
 x_dac,0.0
-x_ammonia_splitting,0.0
+x_ammonia_splitting,-0.0
 point_source_amount,0.0
 dac_amount,0.0
 x_transport_hydrogen,1.0

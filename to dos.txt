@@ -2,3 +2,4 @@ Consider machinery in electricity capacity constraint (capacity wind + solar > c
 --> What if it's not set up in Marocco? (Most advantegous state would be to set it up in rotterdam, because then the constraint doesn't apply)
 
 
+Consider 0.71 in the co2 source costs

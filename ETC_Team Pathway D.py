@@ -295,8 +295,8 @@ model.addConstr(x_ammonia_splitting + x_transport['hydrogen'] <= 1)
 model.addConstr(x_ammonia_splitting + x_transport['hydrogen'] >= x['Customer_1_Steel_Plant'])
 
 # Battery capacity is linked to wind and photovoltaic
-model.addConstr(capacity_battery == 1.2*(capacity_photovoltaic * 6.3 - capacity_PEM_electrolyzer * 12) * x1 
-                                    + 1.2*(capacity_wind * 13.7 - capacity_PEM_electrolyzer * 20 ) *x2)
+model.addConstr(capacity_battery == 1.2*(capacity_photovoltaic * 6.3 - capacity_PEM_electrolyzer/efficiency_PEM_electrolyzer * 12) * x1 
+                                    + 1.2*(capacity_wind * 13.7 - capacity_PEM_electrolyzer/efficiency_PEM_electrolyzer * 20 ) *x2)
 
 model.addConstr(x1 * M >= capacity_photovoltaic)
 model.addConstr(x2 * M >= capacity_wind)

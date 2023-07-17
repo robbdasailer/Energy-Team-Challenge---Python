@@ -20,13 +20,13 @@ time_horizon = range(1, 31)  # Time periods from 1 to 30
 max_demand_customers = {
     'Customer_1_Steel_Plant': 1000,
     'Customer_2_Chemical_Plant': 500,
-    'Customer_3_Airport': 1000,
+    'Customer_3_Airport': 500,
 }
 
 # Define selling price in €/GWh
 price_per_unit = {
-    'hydrogen': 0 ,#210000,
-    'ammonia': 0, #287000,
+    'hydrogen': 210000,
+    'ammonia': 287000,
     'jetfuel': 252000, 
 }
 
@@ -231,8 +231,8 @@ model.addConstr(capacity_photovoltaic * operating_hours_photovoltaic
                     + capacity_alkaline_electrolyzer * operating_hours_alkaline_electrolyzer / efficiency_alkaline_electrolyzer)
 
 # At least 80% of the steel plant’s maximum demand must be met
-# for t in time_horizon:
-#     model.addConstr(y['Customer_1_Steel_Plant', t] >= 0.8 * max_demand_customers['Customer_1_Steel_Plant'])
+for t in time_horizon:
+    model.addConstr(y['Customer_1_Steel_Plant', t] >= 0.8 * max_demand_customers['Customer_1_Steel_Plant'])
 
 # At least 50% of either the chemical plant’s or airport’s demand must be met
 for t in time_horizon:
@@ -349,12 +349,12 @@ print("transported_jetfuel:", transported_jetfuel_values)
 print("transported_hydrogen:", transported_hydrogen_values)
 
 # Print all variables related to the CO2 source
-print("CO2 required", [y['Customer_3_Airport',t].x / 0.71 * CO2_demand_per_unit_jetfuel for t in time_horizon])
-print("x_dac:", [x_dac[t-1].x for t in time_horizon])
-print("x_point_source:", [x_point_source[t-1].x for t in time_horizon]) 
-print("point_source_availability:", [point_source_availability[t-1] for t in time_horizon]) 
-print("point_source_amount:", [point_source_amount[t-1].x for t in time_horizon])
-print("dac_amount:", [dac_amount[t-1].x for t in time_horizon])
+#print("CO2 required", [y['Customer_3_Airport',t].x / 0.71 * CO2_demand_per_unit_jetfuel for t in time_horizon])
+#print("x_dac:", [x_dac[t-1].x for t in time_horizon])
+#print("x_point_source:", [x_point_source[t-1].x for t in time_horizon]) 
+#print("point_source_availability:", [point_source_availability[t-1] for t in time_horizon]) 
+#print("point_source_amount:", [point_source_amount[t-1].x for t in time_horizon])
+#print("dac_amount:", [dac_amount[t-1].x for t in time_horizon])
 
 
 cash_outflow_co2_print = [round(expr.getValue(),2) for expr in cash_outflow_co2]
@@ -383,16 +383,16 @@ print("cash_inflow_customer_1: ", [model.getVarByName(f'y_Customer_1_Steel_Plant
 print("cash_inflow_customer_2: ", [model.getVarByName(f'y_Customer_2_Chemical_Plant_{i}').x * price_per_unit['ammonia'] for i in range(1, 11)])
 print("cash_inflow_customer_3: ", [model.getVarByName(f'y_Customer_3_Airport_{i}').x /0.71 * price_per_unit['jetfuel'] for i in range(1, 11)])
 
-print(cash_outflow_photovoltaic.getValue())
-print(cash_outflow_wind.getValue())
-print(cash_outflow_PEM_electrolyzer.getValue())
-print(cash_outflow_alkaline_electrolyzer.getValue())
-print(cash_outflow_FT_synthesis.getValue())
-print(cash_outflow_ammonia_synthesis.getValue())
-print(cash_outflow_ammonia_splitting.getValue())
-print("cash_outflow_transport: ", round(cash_outflow_transport[0].getValue(),2))
-print(cash_outflow_co2[0].getValue())
-print(cash_outflow_battery.getValue())
+# print(cash_outflow_photovoltaic.getValue())
+# print(cash_outflow_wind.getValue())
+# print(cash_outflow_PEM_electrolyzer.getValue())
+# print(cash_outflow_alkaline_electrolyzer.getValue())
+# print(cash_outflow_FT_synthesis.getValue())
+# print(cash_outflow_ammonia_synthesis.getValue())
+# print(cash_outflow_ammonia_splitting.getValue())
+# print("cash_outflow_transport: ", round(cash_outflow_transport[0].getValue(),2))
+# print(cash_outflow_co2[0].getValue())
+# print(cash_outflow_battery.getValue())
 
 ####### Testing the NPV
 

@@ -102,7 +102,7 @@ x_ammonia_splitting,1.0
 point_source_amount,0.0
 dac_amount,0.0
 x_transport_ammonia,1.0
-init_investment,1867390193.5203304
+init_investment,1337383670.3631225
 capacity_photovoltaic,0.0
 capacity_wind,0.4642857142857143
 capacity_PEM_electrolyzer,0.20611364789446981
@@ -110,4 +110,4 @@ capacity_alkaline_electrolyzer,0.0
 capacity_FT_synthesis,0.0
 capacity_ammonia_synthesis,0.1902587519025875
 capacity_ammonia_splitting,0.12683916793505834
-capacity_battery,2.6861295933898672
+capacity_battery,0.5661035007610353

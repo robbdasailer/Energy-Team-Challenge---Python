@@ -151,7 +151,7 @@ model.update()
 # Define transported amounts in GWh
 transported_ammonia = [y['Customer_2_Chemical_Plant', t] * x_transport['ammonia'] + y['Customer_1_Steel_Plant', t] * x_ammonia_splitting / efficiency_ammonia_splitting for t in time_horizon ] 
 transported_jetfuel = [y['Customer_3_Airport', t] * x_transport['jetfuel'] for t in time_horizon]
-transported_hydrogen = [y['Customer_1_Steel_Plant', t] * x_transport['hydrogen'] + y['Customer_2_Chemical_Plant', t] * (1- x_transport['ammonia']) / efficiency_ammonia_synthesis + y['Customer_3_Airport', t] * (1- x_transport['jetfuel']) / efficiency_FT_synthesis  for t in time_horizon]
+transported_hydrogen = [y['Customer_1_Steel_Plant', t] * x_transport['hydrogen'] + y['Customer_2_Chemical_Plant', t] * (1- x_transport['ammonia']) / efficiency_ammonia_synthesis + y['Customer_3_Airport', t] * (1- x_transport['jetfuel']) / efficiency_FT_synthesis / 0.71  for t in time_horizon]
 
 # Define cash inflow per period for each customer
 cash_inflow_customer_1 = [price_per_unit['hydrogen'] * y['Customer_1_Steel_Plant', t] for t in time_horizon]
@@ -227,8 +227,8 @@ model.addConstr(capacity_photovoltaic / capacity_per_unit_area['photovoltaic']
 # Linking constraint between produced energy and required energy
 model.addConstr(capacity_photovoltaic * operating_hours_photovoltaic 
                     + capacity_wind * operating_hours_wind
-                    >= capacity_PEM_electrolyzer * operating_hours_PEM_electrolyzer 
-                    + capacity_alkaline_electrolyzer * operating_hours_alkaline_electrolyzer)
+                    >= capacity_PEM_electrolyzer * operating_hours_PEM_electrolyzer / efficiency_PEM_electrolyzer
+                    + capacity_alkaline_electrolyzer * operating_hours_alkaline_electrolyzer / efficiency_alkaline_electrolyzer)
 
 # At least 80% of the steel plant’s maximum demand must be met
 for t in time_horizon:

@@ -58,7 +58,6 @@ capex = {
     'FT_synthesis': 1200 * 10 **6,
     'ammonia_synthesis': 1400 * 10 **6,
     'ammonia_splitting': 700 * 10 **6, #needs to be investigated
-    'battery': 250 * 10**6 #€/GWh
 }
 
 opex = {
@@ -69,13 +68,12 @@ opex = {
     'FT_synthesis': 0.05 * capex['FT_synthesis'],
     'ammonia_synthesis': 0.05 * capex['ammonia_synthesis'],
     'ammonia_splitting': 0.05 * capex['ammonia_splitting'],
-    'battery': 0 * capex['battery']
 }
 
 # Define operating hours of photovoltaic and wind in h/year
 operating_hours_photovoltaic = 2300
 operating_hours_wind = 5000
-operating_hours_PEM_electrolyzer = operating_hours_alkaline_electrolyzer = 24*365 * 0.9
+operating_hours_PEM_electrolyzer = operating_hours_alkaline_electrolyzer = 2300
 operating_hours_FT_synthesis = operating_hours_ammonia_synthesis = operating_hours_ammonia_splitting = 24*365 * 0.9
 
 # Define efficiency of Electrolyzers
@@ -84,7 +82,6 @@ efficiency_alkaline_electrolyzer = 0.65
 efficiency_FT_synthesis = 0.75
 efficiency_ammonia_synthesis = 0.8
 efficiency_ammonia_splitting = 0.7 # needs to be researched
-# efficiency_battery = 0.95
 
 # Transport costs in €/GWh
 transport_costs = {
@@ -103,10 +100,6 @@ for c in customers:
     x[c] = model.addVar(name="x_" + c, vtype=gp.GRB.BINARY) # is 1 if customer will be served and 0 if customer won't be served
     for t in time_horizon:
         y[c, t] = model.addVar(name="y_" + c + "_" + str(t), lb=0, vtype=gp.GRB.CONTINUOUS) # describes how much GWh are supplied to customer c in period t
-
-# Decision variables for the battery capacity constraint
-x1 = model.addVar(name="x1", vtype=gp.GRB.BINARY)
-x2 = model.addVar(name="x2", vtype=gp.GRB.BINARY)
 
 # Decision variables for the CO2 supply, binary
 x_point_source = {}
@@ -128,9 +121,9 @@ for t in time_horizon:
 
 # Decision variables for transport: variable = 0 if product is not transported, and variable = 1 if product is transported
 x_transport = {}
-x_transport['hydrogen'] = 1 #model.addVar(name="x_transport_hydrogen", vtype=gp.GRB.BINARY)
-x_transport['ammonia'] = 1 #model.addVar(name="x_transport_ammonia", vtype=gp.GRB.BINARY)
-x_transport['jetfuel'] = 1 #model.addVar(name="x_transport_jetfuel", vtype=gp.GRB.BINARY)
+x_transport['hydrogen'] = model.addVar(name="x_transport_hydrogen", vtype=gp.GRB.BINARY)
+x_transport['ammonia'] = model.addVar(name="x_transport_ammonia", vtype=gp.GRB.BINARY)
+x_transport['jetfuel'] = model.addVar(name="x_transport_jetfuel", vtype=gp.GRB.BINARY)
 
 # Decision variable for the initial investment
 init_investment_var = model.addVar(name="init_investment", vtype=gp.GRB.CONTINUOUS)
@@ -143,7 +136,6 @@ capacity_alkaline_electrolyzer = model.addVar(name="capacity_alkaline_electrolyz
 capacity_FT_synthesis = model.addVar(name="capacity_FT_synthesis", vtype=gp.GRB.CONTINUOUS)
 capacity_ammonia_synthesis = model.addVar(name="capacity_ammonia_synthesis", vtype=gp.GRB.CONTINUOUS)
 capacity_ammonia_splitting = model.addVar(name="capacity_ammonia_splitting", vtype=gp.GRB.CONTINUOUS)
-capacity_battery = model.addVar(name="capacity_battery", vtype=gp.GRB.CONTINUOUS)
 
 # Update Model
 model.update()
@@ -173,7 +165,6 @@ cash_outflow_ammonia_synthesis = opex['ammonia_synthesis'] * capacity_ammonia_sy
 cash_outflow_ammonia_splitting = opex['ammonia_splitting'] * capacity_ammonia_splitting
 cash_outflow_transport = [transported_hydrogen[t-1] * transport_costs["hydrogen"] + transported_ammonia[t-1] * transport_costs["ammonia"] + transported_jetfuel[t-1] * transport_costs["jetfuel"] for t in time_horizon]
 cash_outflow_co2 = [ (point_source_costs[t-1] + dac_costs[t-1]) + (1 - x_transport['jetfuel']) * (70 * y['Customer_3_Airport', t] / 0.71 * CO2_demand_per_unit_jetfuel) for t in time_horizon]
-cash_outflow_battery = opex['battery'] * capacity_battery 
 
 # Initial investment
 init_investment_expr =   (capex['photovoltaic'] * capacity_photovoltaic 
@@ -183,8 +174,6 @@ init_investment_expr =   (capex['photovoltaic'] * capacity_photovoltaic
                     + capex['FT_synthesis'] * capacity_FT_synthesis
                     + capex['ammonia_synthesis'] * capacity_ammonia_synthesis
                     + capex['ammonia_splitting'] * capacity_ammonia_splitting
-                    + capex['battery'] * capacity_battery
-                    # + capex['battery'] * capacity_photovoltaic * 3.15
 )
 
 # Set the objective function to maximize dynamically calculated NPV
@@ -201,7 +190,6 @@ objective = - 0.5 * init_investment_var - 0.5 * init_investment_var / (1+i) + gp
     - cash_outflow_ammonia_splitting
     - cash_outflow_transport[t - 1]
     - cash_outflow_co2[t-1]
-    - cash_outflow_battery
     ) 
     / ((1 + i) ** (t+1))
     for t in time_horizon
@@ -260,7 +248,7 @@ for t in time_horizon:
 
 # The ammonia splitting capacity must be
 for t in time_horizon:
-    model.addConstr(capacity_ammonia_splitting >= (y['Customer_1_Steel_Plant',t] / 0.7) * x_ammonia_splitting + (y['Customer_3_Airport',t] / (0.7*0.75)) * x_ammonia_splitting)
+    model.addConstr(capacity_ammonia_splitting * operating_hours_ammonia_splitting >= (y['Customer_1_Steel_Plant', t]  + (y['Customer_3_Airport', t] / (0.7 * 0.75))) * x_ammonia_splitting)
 
 # Couple the CO2 captured from the air to the transported jet fuel
 for t in time_horizon:
@@ -289,13 +277,7 @@ for t in time_horizon:
 model.addConstr(x_ammonia_splitting + x_transport['hydrogen'] <= 1)
 model.addConstr(x_ammonia_splitting + x_transport['hydrogen'] >= x['Customer_1_Steel_Plant'])
 
-# Battery capacity is linked to wind and photovoltaic
-model.addConstr(capacity_battery == 1.2*(capacity_photovoltaic * 6.3 - capacity_PEM_electrolyzer * 12) * x1 
-                                    + 1.2*(capacity_wind * 13.7 - capacity_PEM_electrolyzer * 20 ) *x2)
 
-model.addConstr(x1 * M >= capacity_photovoltaic)
-model.addConstr(x2 * M >= capacity_wind)
-model.addConstr(x1 + x2 <= 1)
 
 # Initial investment must be lower than 2bn
 model.addConstr((0.5 + 0.5 / (1+i))* init_investment_var <= 2*10**9)
@@ -324,7 +306,6 @@ print(f"capacity of alkaline electrolyzer: {round(capacity_alkaline_electrolyzer
 print(f"capacity of FT-synthesis: {round(capacity_FT_synthesis.x, 8)}" )
 print(f"capacity of ammonia splitting: {round(capacity_ammonia_splitting.x, 8)} GW, i.e. a yearly energy demand of {round(capacity_ammonia_splitting.x, 2) * operating_hours_ammonia_splitting} GWh")
 print(f"capacity of ammonia synthesis: {round(capacity_ammonia_synthesis.x, 8)} GW, i.e. a yearly energy demand of {round(capacity_ammonia_synthesis.x, 2) * operating_hours_ammonia_synthesis} GWh")
-print(f"capacity of battery: {round(capacity_battery.x, 8)} GWh")
 
 # Print the supply for each customer
 for c in customers:
@@ -337,9 +318,9 @@ for c in customers:
 
 # Print all variables related to transport
 print("x_ammonia_splitting: ", x_ammonia_splitting.x)
-# print("x_transport_ammonia: ", x_transport['ammonia'].x)
-# print("x_transport_hydrogen: ", x_transport['hydrogen'].x)
-# print("x_transport_jetfuel", x_transport['jetfuel'].x)
+print("x_transport_ammonia: ", x_transport['ammonia'].x)
+print("x_transport_hydrogen: ", x_transport['hydrogen'].x)
+print("x_transport_jetfuel", x_transport['jetfuel'].x)
 transported_ammonia_values = [round(expr.getValue(),2) for expr in transported_ammonia]
 transported_jetfuel_values = [round(expr.getValue(),2) for expr in transported_jetfuel]
 transported_hydrogen_values = [round(expr.getValue(),2) for expr in transported_hydrogen]
@@ -357,7 +338,7 @@ print("point_source_amount:", [point_source_amount[t-1].x for t in time_horizon]
 print("dac_amount:", [dac_amount[t-1].x for t in time_horizon])
 
 
-cash_outflow_co2_print = [round(expr.getValue(),0) for expr in cash_outflow_co2]
+cash_outflow_co2_print = [round(expr.getValue(),2) for expr in cash_outflow_co2]
 print("cash_outflow_co2: ", cash_outflow_co2_print)
 
 print("init_investment:", init_investment_var.x)
@@ -379,49 +360,47 @@ print("area occupied:", capacity_photovoltaic.x / capacity_per_unit_area['photov
 
 
 ####### Testing for Finance Plan
-# print("cash_inflow_customer_1: ", [model.getVarByName(f'y_Customer_1_Steel_Plant_{i}').x * price_per_unit['hydrogen'] for i in range(1, 11)])
-# print("cash_inflow_customer_2: ", [model.getVarByName(f'y_Customer_2_Chemical_Plant_{i}').x * price_per_unit['ammonia'] for i in range(1, 11)])
-# print("cash_inflow_customer_3: ", [model.getVarByName(f'y_Customer_3_Airport_{i}').x * price_per_unit['jetfuel'] for i in range(1, 11)])
+print("cash_inflow_customer_1: ", [model.getVarByName(f'y_Customer_1_Steel_Plant_{i}').x * price_per_unit['hydrogen'] for i in range(1, 11)])
+print("cash_inflow_customer_2: ", [model.getVarByName(f'y_Customer_2_Chemical_Plant_{i}').x * price_per_unit['ammonia'] for i in range(1, 11)])
+print("cash_inflow_customer_3: ", [model.getVarByName(f'y_Customer_3_Airport_{i}').x /0.71 * price_per_unit['jetfuel'] for i in range(1, 11)])
 
-# print(cash_outflow_photovoltaic.getValue())
-# print(cash_outflow_wind.getValue())
-# print(cash_outflow_PEM_electrolyzer.getValue())
-# print(cash_outflow_alkaline_electrolyzer.getValue())
-# print(cash_outflow_FT_synthesis.getValue())
-# print(cash_outflow_ammonia_synthesis.getValue())
-# print(cash_outflow_ammonia_splitting.getValue())
+print(cash_outflow_photovoltaic.getValue())
+print(cash_outflow_wind.getValue())
+print(cash_outflow_PEM_electrolyzer.getValue())
+print(cash_outflow_alkaline_electrolyzer.getValue())
+print(cash_outflow_FT_synthesis.getValue())
+print(cash_outflow_ammonia_synthesis.getValue())
+print(cash_outflow_ammonia_splitting.getValue())
 print("cash_outflow_transport: ", round(cash_outflow_transport[0].getValue(),2))
-# print(cash_outflow_co2[0].getValue())
-# print(cash_outflow_battery.getValue())
+print(cash_outflow_co2[0].getValue())
 
 ####### Testing the NPV
 
 NPV_t = {}
-NPV_t[0] = - 0.5 * init_investment_var.x / (1+i)
-NPV_t[1] = NPV_t[0] - 0.5 * init_investment_var.x / (1+i)** 2
+NPV_t[0] = - 0.5 * init_investment_var.x 
+NPV_t[1] = NPV_t[0] - 0.5 * init_investment_var.x / (1+i)
 for t in time_horizon:
-    NPV_t[t+1] = NPV_t[t] + ( cash_inflow_customer_1[t - 1] 
-    + cash_inflow_customer_2[t - 1] 
-    + cash_inflow_customer_3[t - 1] 
-    - cash_outflow_photovoltaic
-    - cash_outflow_wind
-    - cash_outflow_PEM_electrolyzer
-    - cash_outflow_alkaline_electrolyzer
-    - cash_outflow_FT_synthesis
-    - cash_outflow_ammonia_synthesis
-    - cash_outflow_ammonia_splitting
-    - cash_outflow_transport[t - 1]
-    - cash_outflow_co2[t-1]
-    - cash_outflow_battery) / ((1 + i) ** (t+2))
-# for index in NPV_t:
-    # print(NPV_t[index])
+    NPV_t[t+1] = NPV_t[t] + ( model.getVarByName(f'y_Customer_1_Steel_Plant_{t}').x * price_per_unit['hydrogen']
+    + model.getVarByName(f'y_Customer_2_Chemical_Plant_{t}').x * price_per_unit['ammonia']
+    + model.getVarByName(f'y_Customer_3_Airport_{t}').x /0.71 * price_per_unit['jetfuel']
+    - cash_outflow_photovoltaic.getValue()
+    - cash_outflow_wind.getValue()
+    - cash_outflow_PEM_electrolyzer.getValue()
+    - cash_outflow_alkaline_electrolyzer.getValue()
+    - cash_outflow_FT_synthesis.getValue()
+    - cash_outflow_ammonia_synthesis.getValue()
+    - cash_outflow_ammonia_splitting.getValue()
+    - cash_outflow_transport[t - 1].getValue()
+    - cash_outflow_co2[t-1].getValue()) / ((1 + i) ** (t+1))
+for index in NPV_t:
+    print(NPV_t[index])
 
 # Export values to csv File
 variable_values={}
 for v in model.getVars():
     variable_values[v.VarName]=v.x
     
-csv_file_path = 'results Pathway B.csv'
+csv_file_path = 'results no battery.csv'
 
 with open(csv_file_path, "w", newline="") as file:
     writer = csv.writer(file)
@@ -432,3 +411,8 @@ with open(csv_file_path, "w", newline="") as file:
     # Write the variable values row by row
     for var_name, var_value in variable_values.items():
         writer.writerow([var_name, var_value])    
+
+    # Write the NPV values
+    writer.writerow(["NPV_t", "Value"])
+    for index, value in NPV_t.items():
+        writer.writerow([f"NPV_{index}", round(value,0)])

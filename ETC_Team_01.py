@@ -108,6 +108,9 @@ for c in customers:
 x1 = model.addVar(name="x1", vtype=gp.GRB.BINARY)
 x2 = model.addVar(name="x2", vtype=gp.GRB.BINARY)
 
+x_helper_1 = model.addVar(name="x_helper_1", vtype=gp.GRB.BINARY)
+x_helper_2 = model.addVar(name="x_helper_2", vtype=gp.GRB.BINARY)
+
 # Decision variables for the CO2 supply, binary
 x_point_source = {}
 x_dac = {}
@@ -150,7 +153,7 @@ model.update()
 
 # Define transported amounts in GWh
 transported_ammonia = [y['Customer_2_Chemical_Plant', t] * x_transport['ammonia'] + y['Customer_1_Steel_Plant', t] * x_ammonia_splitting / efficiency_ammonia_splitting for t in time_horizon ] 
-transported_jetfuel = [y['Customer_3_Airport', t] * x_transport['jetfuel'] for t in time_horizon]
+transported_jetfuel = [y['Customer_3_Airport', t] / 0.71 * x_transport['jetfuel'] for t in time_horizon]
 transported_hydrogen = [y['Customer_1_Steel_Plant', t] * x_transport['hydrogen'] + y['Customer_2_Chemical_Plant', t] * (1- x_transport['ammonia']) / efficiency_ammonia_synthesis + y['Customer_3_Airport', t] * (1- x_transport['jetfuel']) / efficiency_FT_synthesis / 0.71  for t in time_horizon]
 
 # Define cash inflow per period for each customer
@@ -236,9 +239,11 @@ for t in time_horizon:
 
 # At least 50% of either the chemical plant’s or airport’s demand must be met
 for t in time_horizon:
-    model.addConstr(y['Customer_2_Chemical_Plant', t] >= 0.5 * max_demand_customers['Customer_2_Chemical_Plant'] * x['Customer_2_Chemical_Plant'])
-    model.addConstr(y['Customer_3_Airport', t] >= 0.5 * max_demand_customers['Customer_3_Airport'] * x['Customer_3_Airport'])
-    model.addConstr(x['Customer_2_Chemical_Plant'] + x['Customer_3_Airport'] >= 1)
+    model.addConstr(y['Customer_2_Chemical_Plant', t] >= 0.5 * max_demand_customers['Customer_2_Chemical_Plant'] * x_helper_1 )
+    model.addConstr(y['Customer_3_Airport', t] >= 0.5 * max_demand_customers['Customer_3_Airport'] * x_helper_2 )
+    model.addConstr(x_helper_1 + x_helper_2 >=1 )
+    model.addConstr(y['Customer_2_Chemical_Plant', t] * M >= x['Customer_2_Chemical_Plant'])
+    model.addConstr(y['Customer_3_Airport', t] * M >= x['Customer_3_Airport'] )
 
 
 # The capacity of the electrolyzers must meet demands in GWh

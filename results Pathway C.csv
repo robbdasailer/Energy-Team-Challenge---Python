@@ -94,6 +94,8 @@ y_Customer_3_Airport_29,0.0
 y_Customer_3_Airport_30,0.0
 x1,0.0
 x2,1.0
+x_helper_1,1.0
+x_helper_2,0.0
 x_point_source,0.0
 x_dac,0.0
 x_ammonia_splitting,1.0

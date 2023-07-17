@@ -63,7 +63,7 @@ y_Customer_2_Chemical_Plant_29,500.0
 y_Customer_2_Chemical_Plant_30,500.0
 x_Customer_3_Airport,1.0
 y_Customer_3_Airport_1,251.89105357962964
-y_Customer_3_Airport_2,251.89105357962964
+y_Customer_3_Airport_2,251.8910535796297
 y_Customer_3_Airport_3,251.89105357962964
 y_Customer_3_Airport_4,251.89105357962964
 y_Customer_3_Airport_5,251.89105357962964
@@ -83,7 +83,7 @@ y_Customer_3_Airport_18,251.89105357962964
 y_Customer_3_Airport_19,251.89105357962964
 y_Customer_3_Airport_20,251.89105357962964
 y_Customer_3_Airport_21,251.89105357962964
-y_Customer_3_Airport_22,251.89105357962964
+y_Customer_3_Airport_22,251.8910535796297
 y_Customer_3_Airport_23,251.89105357962964
 y_Customer_3_Airport_24,251.89105357962964
 y_Customer_3_Airport_25,251.89105357962964
@@ -92,8 +92,10 @@ y_Customer_3_Airport_27,251.89105357962964
 y_Customer_3_Airport_28,251.89105357962964
 y_Customer_3_Airport_29,251.89105357962964
 y_Customer_3_Airport_30,251.89105357962964
-x1,-0.0
+x1,0.0
 x2,1.0
+x_helper_1,1.0
+x_helper_2,-0.0
 x_point_source,0.0
 x_dac,0.0
 x_ammonia_splitting,-0.0
@@ -107,7 +109,7 @@ capacity_photovoltaic,0.0
 capacity_wind,0.5994385264008745
 capacity_PEM_electrolyzer,0.26611299370916547
 capacity_alkaline_electrolyzer,0.0
-capacity_FT_synthesis,0.044999509361021726
+capacity_FT_synthesis,0.04499950936102173
 capacity_ammonia_synthesis,0.06341958396752917
 capacity_ammonia_splitting,0.0
 capacity_battery,3.4680575250104027

@@ -76,7 +76,7 @@ opex = {
 operating_hours_photovoltaic = 2300
 operating_hours_wind = 5000
 operating_hours_PEM_electrolyzer = operating_hours_alkaline_electrolyzer = 2300
-operating_hours_FT_synthesis = operating_hours_ammonia_synthesis = operating_hours_ammonia_splitting = 24*365 * 0.9
+operating_hours_FT_synthesis = operating_hours_ammonia_synthesis = operating_hours_ammonia_splitting = 2300
 
 # Define efficiency of Electrolyzers
 efficiency_PEM_electrolyzer = 0.7
